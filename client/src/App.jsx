@@ -12,31 +12,43 @@ import AddJob from "./pages/AddJob";
 import ManageJobs from "./pages/ManageJobs";
 import ViewApplication from "./pages/Viewapplication";
 import "quill/dist/quill.snow.css";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 
 
 const App = () => {
-  const { showRecruiterLogin} = useContext(AppContext);
+  const { showRecruiterLogin, companyToken } = useContext(AppContext);
 
   return (
     <div>
       {/* <button onClick={() => setShowRecruiterLogin(true)}>Recruiter Login</button> */}
-    {showRecruiterLogin && <RecruiterLogin />}
-    {showRecruiterLogin && <RecruiterLogin />} 
+      {showRecruiterLogin && <RecruiterLogin />}
+      
+      <ToastContainer />
+      {/* {showRecruiterLogin && <RecruiterLogin />}  */}
+      
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/apply-job/:id" element={<ApplyJob />} />
         <Route path="/application" element={<Application />} />
         <Route path="/dashboard" element={<Dashboard />}>
           <Route path="/dashboard/apply-job" element={<AddJob />} />
-          <Route path="add-job" element={<AddJob />} />
+          {
+            companyToken ? <>
+              <Route path="add-job" element={<AddJob />} />
 
-          <Route path="manage-jobs" element={<ManageJobs />} />
+              <Route path="manage-jobs" element={<ManageJobs />} />
 
-          <Route path="view-applications" element={<ViewApplication />} />
+              <Route path="view-applications" element={<ViewApplication />} />
 
-          <Route path="*" element={<h1>Page not found</h1>} />
+          }
+            </> : null
+          
+            < Route path = "*" element={<h1>Page not found</h1>} />
+        
         </Route>
       </Routes>
     </div>

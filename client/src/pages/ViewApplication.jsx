@@ -64,12 +64,74 @@
 
 //import React from "react";
  // eslint-disable-next-line no-unused-vars
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 
 import { assets, viewApplicationsPageData } from "../assets/assets";
+import { AppContext } from "../context/AppContext";
+import { useEffect } from "react";
+import Loading from "../components/Loading";
 
 const ViewApplication = () => {
-  return (
+
+  const { backendUrl, companyToken } = useContext(AppContext)
+  
+  const [applicants, setApplicants] = useState(false)
+  
+  //Function to fetch company Job Applicants data
+
+  const fetchCompanyJobApplications = async () => {
+    
+    try {
+      
+      const { data } = await axios.get(backendUrl + '/api/company/applicants',
+        {headers:{token:companyToken}})
+      
+      if (data.success) {
+        setApplicants(data.applications.reverse())
+      } else {
+        toast.error(data.message)
+      }
+
+    } catch (error) {
+      toast.error(error.message)
+    }
+
+  }
+  //Function to Update Job Applications Status
+  
+  const changeJobApplicationStatus = async (id,status) => {
+    try {
+      
+      const { data } = await axios.post(backendUrl + '/api/company/change-status',
+        { id, status },
+        {headers:{token:companyToken}}
+      )
+      if (data.success) {
+        fetchCompanyJobApplications()
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(() => {
+    if (companyToken) {
+      fetchCompanyJobApplications()
+    }
+  },[companyToken])
+
+
+
+
+
+
+  return applicants ? applicants.length === 0 ? (
+  <div className='flex items-center justify-center h-[70vh]'>
+      <p className='text-xl sm:text-2xl'>No Application Available</p>
+    </div>
+  ):(
     <div className="container mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Applications</h2>
       <div className="overflow-x-auto shadow-md rounded-lg">
@@ -85,24 +147,24 @@ const ViewApplication = () => {
             </tr>
           </thead>
           <tbody>
-            {viewApplicationsPageData.map((applicant, index) => (
+            {applicants.filter(item=>item.jobId&&item.userId).map((applicant, index) => (
               <tr key={index} className="border-b hover:bg-gray-50">
                 <td className="py-3 px-4">{index + 1}</td>
                 <td className="py-3 px-4">
                   <div className="flex items-center">
                     <img
-                      src={applicant.imgSrc}
+                      src={applicant.userId.image}
                       alt={`${applicant.name}'s profile`}
                       className="w-10 h-10 rounded-full mr-3"
                     />
-                    <span className="font-medium">{applicant.name}</span>
+                    <span className="font-medium">{applicant.userId.name}</span>
                   </div>
                 </td>
-                <td className="py-3 px-4">{applicant.jobTitle}</td>
-                <td className="py-3 px-4">{applicant.joblocation}</td>
+                <td className="py-3 px-4">{applicant.jobId.jobTitle}</td>
+                <td className="py-3 px-4">{applicant.jobId.joblocation}</td>
                 <td className="py-3 px-4">
                   <a
-                    href={applicant.resumeUrl || "#"}
+                    href={applicant.userId.resume}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center text-blue-600 hover:text-blue-800"
@@ -116,7 +178,9 @@ const ViewApplication = () => {
                   </a>
                 </td>
                 <td className="py-3 px-4">
-                  <div className="relative group">
+                  {applicant.status === "Pending"
+                    
+                    <div className="relative group">
                     <button className="px-2 py-1 rounded-md hover:bg-gray-100">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -137,15 +201,22 @@ const ViewApplication = () => {
                     </button>
                     <div className="absolute right-0 hidden mt-2 w-48 bg-white rounded-md shadow-lg border group-hover:block z-10">
                       <div className="py-1">
-                        <button className="block w-full text-left px-4 py-2 text-green-600 hover:bg-gray-100">
+                        <button onClick={()=>changeJobApplicationStatus(applicant._id,'Accepted') } className="block w-full text-left px-4 py-2 text-green-600 hover:bg-gray-100">
                           Accept
                         </button>
-                        <button className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">
+                        <button onClick={() => changeJobApplicationStatus(applicant._id,'Rejected')} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">
                           Reject
                         </button>
                       </div>
                     </div>
-                  </div>
+                </div>
+                :<div>{applicant.status}</div>
+                  
+                    
+                    
+                
+                  }
+                  
                 </td>
               </tr>
             ))}
@@ -153,7 +224,7 @@ const ViewApplication = () => {
         </table>
       </div>
     </div>
-  );
+  ) : <Loading />
 };
 
 export default ViewApplication;

@@ -171,16 +171,65 @@
     
     
 /* eslint-disable no-undef */
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { assets } from "../assets/assets";
 import moment from "moment";
+import { AppContext } from "../context/AppContext";
+import { useUser,useAuth} from "@clerk/clerk-react";
 
 const Application = () => {
+
+  const { user } = useUser()
+  const { getToken } = useAuth()
+  
+
+
   const [isEdit, setIsEdit] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [resume, setResume] = useState(null);
+
+  const { backendUrl, userData, userApplications, fetchUserData } = useContext(AppContext)
+
+
+  const updateResume = async () => {
+    
+
+    try {
+      
+      const formData = new FormData()
+      formData.append('resume', resume)
+      
+      const token = await getToken
+
+      const { data } = await axios.post(backendUrl + '/api/users/update/update-resume',
+        {headers:{Authorization :`Bearer ${token}` }}
+      )
+
+      if (data.success) {
+        toast.success(data.message)
+        await fetchUserData()
+      } else {
+        toast.error(data.message)
+      }
+
+    } catch (error) {
+      toast.error(error.message)
+    }
+
+    setIsEdit(false)
+    setResume(null)
+  }
+
+
+  useEffect(() => {
+    if (user) {
+      fetchUserApplications()
+    }
+    
+  },[user])
+  
   
   // Define jobsApplied array which was missing
   const jobsApplied = [
@@ -216,14 +265,15 @@ const Application = () => {
       <div className="container px-4 min-h-[65vh] 2xl:px-20 mx-auto my-10">
         <h2 className="text-xl font-semibold">Your Resume</h2>
         <div className="flex gap-2 mb-6 mt-3">
-          {isEdit ? (
+          {isEdit || userData && userData.resume ===""
+            ? (
             <>
               <label
                 className="flex items-center"
                 htmlFor="resumeUpload"
               >
                 <p className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg mr-2">
-                  Select Resume
+                  {resume ? resume.name:"Select Resume"}
                 </p>
                 <input
                   id="resumeUpload"
@@ -235,7 +285,7 @@ const Application = () => {
                 <img src={assets.profile_upload_icon} alt="" />
               </label>
               <button
-                onClick={() => setIsEdit(false)}
+                onClick={updateResume}
                 className="bg-green-100 border border-green-400 rounded-lg px-4 py-2"
               >
                 Save
@@ -243,9 +293,9 @@ const Application = () => {
             </>
           ) : (
             <div className="flex gap-2">
-              <a
+              <a target='_blank' href={userData.resume}
                 className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg"
-                href="#"
+                
               >
                 Resume
               </a>
@@ -280,16 +330,16 @@ const Application = () => {
               </tr>
             </thead>
             <tbody>
-              {jobsApplied.map((job, index) => (
+              {userApplications.map((job, index) => (
                 <tr key={index}>
                   <td className="py-3 px-4 flex items-center gap-2 border-b">
-                    <img className="w-8 h-8" src={job.logo} alt="" />
+                    <img className="w-8 h-8" src={job.companyId.image} alt="" />
                     {job.company}
                     </td>
                     
-                  <td className="py-2 px-4 border-b">{job.title}</td>
+                  <td className="py-2 px-4 border-b">{job.jobId.title}</td>
                   <td className="py-2 px-4 border-b max-sm:hidden">
-                    {job.location}
+                    {job.jobId.location}
                   </td>
                   <td className="py-2 px-4 border-b max-sm:hidden">
                     {moment(job.date).format("ll")}

@@ -112,12 +112,17 @@
 
 
 
-import { useEffect, useRef, useState } from "react"; // Add useRef import
+import { useContext, useEffect, useRef, useState } from "react"; // Add useRef import
 import Quill from "quill";
 import "quill/dist/quill.snow.css"; // Ensure Quill CSS is properly imported
 import { JobCategories, JobLocations } from "../assets/assets"; // Ensure correct import for JobCategories and JobLocations
+import axios from 'axios';
+import { AppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
+
 
 const AddJob = () => {
+
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("Bangalore");
   const [category, setCategory] = useState("Programming");
@@ -127,6 +132,39 @@ const AddJob = () => {
 
   const editorRef = useRef(null); // Reference for the Quill editor
   const quillRef = useRef(null); // Reference for the Quill instance
+
+
+  const{backendUrl, companyToken}=useContext(AppContext)
+
+  const onSubmitHandler = async (e) => {
+    e.preventDefault()
+  }
+
+    try {
+      const description = quillRef.current.root.innerHTML
+      
+      const { data } = await axios.post(backendurl + '/api/company/post-job',
+        { title, description, location, salary, category, level },
+        {headers:{token:companyToken}}
+      )
+
+      if (data.success) {
+        toast.success(data.message)
+        setTitle('')
+        setSalary(0)
+        quillRef.current.root.innerHTML=""
+      }
+      else {
+        toast.error(data.message)
+      }
+
+
+
+    } catch (error) {
+      toast.error(data.message)
+    }
+
+
 
   // Set up Quill editor on component mount
   useEffect(() => {

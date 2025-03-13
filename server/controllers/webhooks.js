@@ -3,7 +3,7 @@ import User from "../models/User.js";
 
 //API Controller Function to Manage Clerk User With Database
 
-const clerkWebhooks = async (req, res) => {
+export const clerkWebhooks = async (req, res) => {
     try {
 
         // create a Svix instance with clerk webhook secret.
@@ -14,8 +14,8 @@ const clerkWebhooks = async (req, res) => {
         await whook.verify(JSON.stringify(req.body), {
             "svix-id": req.headers["svix-id"],
             "svix-timestamp": req.headers["svix-timestamp"],
-            "svix-signature":req.headers["svix-signature"]
-        })
+            "svix-signature": req.headers["svix-signature"]
+        });
 
 
         // Geeting data req body
@@ -39,7 +39,7 @@ const clerkWebhooks = async (req, res) => {
                 res.JSON({})
                 break;
 
-          }
+        }
 
             case "user.updated": {
                 const userData = {
